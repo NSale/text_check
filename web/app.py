@@ -93,6 +93,7 @@ class Detect(Resource):
             return retJSON
         
         # Calculate the edit distance
+        import spacy
         nlp = spacy.load('en_core_web_sm')
 
         text1 = nlp(text1)
@@ -116,3 +117,51 @@ class Detect(Resource):
         })
 
         return retJSON
+
+class Refill(Resource):
+    def post(self):
+        postedData = request.get_json()
+
+        username = postedData["username"]
+        password = postedData["password"]
+        refill_amount = postedData["refill"]
+
+        if not UserExist(username):
+            retJSON = {
+                "status": 301,
+                "msg": "User doesn't exist."
+            }
+            return retJSON
+        
+        correct_pw = 'abc123'
+
+        if not password == correct_pw: 
+            retJSON = {
+                "status": 304,
+                "msg": "You entered incorrect admin password."
+            }
+            return retJSON
+
+        current_tokens = countTokens(username)
+
+        users.update({
+            "Username": username
+        }, {
+            "$set": {
+                "Tokens": current_tokens + refill_amount
+            }
+        })
+
+        retJSON = {
+            "status": 200,
+            "msg": "Refill was successfull."
+        }
+
+        return retJSON
+
+api.add_resource(Register, '/register')
+api.add_resource(Detect, '/detect')
+api.add_resource(Refill, '/refill')
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
